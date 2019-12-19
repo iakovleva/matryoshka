@@ -2,12 +2,16 @@
 
 Scrape data from the website. Make calculations. Store the result in Google Spreadsheet. 
 
+Wrapped in Docker container.
+
+Includes files for uploading to AWS CodePipeline - afteinstall.sh & appspec.yml.
+
 ### Script uses:
 
 - Scrapy 
 - Gspread for authorization in Google SpreadSheets
 
-## Getting Started
+### Getting Started
 
 1. Create Google SpreadSheet
 
