@@ -1,0 +1,40 @@
+version: 0.0
+os: linux 
+files:
+  - source: / 
+    destination: /matryoshka
+hooks:
+#  ApplicationStop:
+#    - location:  
+#      timeout: 300
+#      runas: root
+# During the BeforeInstall deployment lifecycle event, run the commands 
+#   in the script specified in "location".
+#  BeforeInstall:
+#    - location: 
+#      timeout:
+#      runas: 
+#    - location: 
+#      timeout:
+#      runas:
+# During the AfterInstall deployment lifecycle event, run the commands 
+#   in the script specified in "location".
+  AfterInstall:
+    - location: afterinstall.sh    
+      timeout: 300 
+      runas: root
+# During the ApplicationStart deployment lifecycle event, run the commands 
+#   in the script specified in "location".
+  ApplicationStart:
+    - location: matryoshka_daily.sh    
+      timeout: 600 
+      runas: root
+# During the ValidateService deployment lifecycle event, run the commands 
+#   in the script specified in "location".
+#  ValidateService:
+#    - location:     
+#      timeout: 
+#      runas:
+#    - location: 
+#      timeout:
+#      runas:
