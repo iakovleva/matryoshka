@@ -43,9 +43,9 @@ class MatryoshkaOrder:
 
     def __init__(self, date):
         self.date = date
-        self.order_dict = self.create_order_dict(self.date)
+        self.order_dict = self.create_order_dict()
 
-    def create_order_dict(self, date: str) -> DefaultDict[str, int]:
+    def create_order_dict(self) -> DefaultDict[str, int]:
         """Retrieve data from csv and count number of orders for each day. """
 
         order_dict = defaultdict(int, **{k: 0 for k in SOURCES.keys()})
@@ -54,7 +54,7 @@ class MatryoshkaOrder:
                 order_id, status, source, order_date = line.split(',')
                 order_date = order_date.strip()
                 for key in SOURCES.keys():
-                    if source == key and order_date == date:
+                    if source == key and order_date == self.date:
                         order_dict[source] += 1
         return order_dict
 
