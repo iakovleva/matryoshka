@@ -6,7 +6,7 @@ from collections import defaultdict
 from typing import DefaultDict
 
 from matryoshka.spiders import tokens
-import gspread_authorize
+from gspread_authorize import Spreadsheet
 from gspread.exceptions import CellNotFound
 
 
@@ -30,7 +30,7 @@ MATR_DB = 'matr'
 LOG_FILE = 'daily.log'
 
 # GSPREAD
-sh = gspread_authorize.Spreadsheet()
+sh = Spreadsheet()
 WS_MATR = sh.open_sheet(tokens.SPREADSHEET_INCOME, 'matr')
 WS_DAILY = sh.open_sheet(tokens.SPREADSHEET_INCOME, 'daily')
 
@@ -41,7 +41,7 @@ class MatryoshkaOrder:
     defaultdict(<class 'int'>, {'дэнбелг': 0, 'дэнворон': 7, 'дэнкол': 4})
     """
 
-    def __init__(self, date):
+    def __init__(self, date: str) -> None:
         self.date = date
         self.order_dict = self.create_order_dict()
 
@@ -81,7 +81,7 @@ class MatryoshkaOrder:
         except CellNotFound:
             logging.info('There is no date %s in daily tab', self.date)
 
-    def write_row_to_matr_sheet(self):
+    def write_row_to_matr_sheet(self) -> None:
         """Write data from defaultdict into spreadsheet. """
 
         try:
@@ -100,7 +100,7 @@ class MatryoshkaOrder:
         logging.info('Matryoshka data for %s is written at %s', self.date,
                      datetime.now())
 
-    def add_new_row_with_formulas(self, sheet):
+    def add_new_row_with_formulas(self, sheet: Spreadsheet):
         """Add row for the new date. Insert formulas of sum in the row. """
 
         sheet.insert_row([self.date], index=2,
@@ -138,6 +138,7 @@ def proceed_order_dict() -> None:
                 order_dict.write_matr_in_daily_sheet(day_sum)
         except FileNotFoundError as e:
             logging.exception(e)
+            raise
 
 
 proceed_order_dict()
