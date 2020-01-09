@@ -102,7 +102,7 @@ class MatryoshkaOrder:
         logging.info('Matryoshka data for %s is written at %s', self.date,
                      datetime.now())
 
-    def add_formulas_to_cells(self, date_cell):
+    def add_formulas_to_cells(self, date_cell: gspread.models.Cell):
         """ Insert formulas of sum in columns (22, 23)."""
 
         frml = f'=SUM(B{date_cell.row},D{date_cell.row},F{date_cell.row},H{date_cell.row},J{date_cell.row},L{date_cell.row},N{date_cell.row},P{date_cell.row},R{date_cell.row},T{date_cell.row})'

@@ -22,7 +22,7 @@ class Spreadsheet:
         self.spreadsheet = self.gc.open_by_url(url)
 
     def open_worksheet(self, worksheet: str) -> \
-                                    gspread.models.Spreadsheet.worksheet:
+                                    gspread.models.Worksheet:
         """Open worksheet by name."""
 
         logging.basicConfig(
@@ -40,15 +40,16 @@ class Spreadsheet:
         return worksheet
 
     def add_new_row_at_the_top(self, values: list, worksheet: str) -> \
-                                    gspread.models.Spreadsheet.worksheet:
+                                    gspread.Worksheet:
         """Add row with values after header row. """
 
         worksheet = self.open_worksheet(worksheet)
         return worksheet.insert_row(values, index=2,
                              value_input_option='USER_ENTERED')
 
-    def update_cell(self, worksheet: str, row: int, column: int, values: str)\
-                                     -> gspread.models.Spreadsheet.worksheet:
+    def update_cell(self, worksheet:str, row:int, column:int, values:str) -> \
+                                       gspread.Worksheet:
+
         """Insert values in the cell. """
 
         worksheet = self.open_worksheet(worksheet)
