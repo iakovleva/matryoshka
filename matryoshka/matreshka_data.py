@@ -30,9 +30,9 @@ MATR_DB = 'matr'
 LOG_FILE = 'daily.log'
 
 # GSPREAD
-sh = Spreadsheet()
-WS_MATR = sh.open_sheet(tokens.SPREADSHEET_INCOME, 'matr')
-WS_DAILY = sh.open_sheet(tokens.SPREADSHEET_INCOME, 'daily')
+sh = Spreadsheet(tokens.SPREADSHEET_INCOME)
+WS_MATR = sh.open_worksheet('matr')
+WS_DAILY = sh.open_worksheet('daily')
 
 
 class MatryoshkaOrder:
@@ -87,32 +87,28 @@ class MatryoshkaOrder:
         try:
             date_cell = WS_MATR.find('{}'.format(self.date))
         except CellNotFound:
-            date_cell = self.add_new_row_with_formulas(WS_MATR)
+            sh.add_new_row_at_the_top([self.date], WS_MATR)
+            date_cell = WS_MATR.find('{}'.format(self.date))
+            self.add_formulas_to_cells(date_cell)
 
         for source, quantity in self.order_dict.items():
-            column, price = SOURCES[source]
+            col, price = SOURCES[source]
             if quantity > 0:    # Don't write zeros
-                WS_MATR.update_cell(date_cell.row, column+1, quantity)
-                WS_MATR.update_cell(date_cell.row, column, quantity * price)
+                sh.update_cell(WS_MATR, date_cell.row, col+1, quantity)
+                sh.update_cell(WS_MATR, date_cell.row, col, quantity * price)
                 # To avoid gspread.exceptions.APIError: Quota exceeded
                 sleep(2)
 
         logging.info('Matryoshka data for %s is written at %s', self.date,
                      datetime.now())
 
-    def add_new_row_with_formulas(self, sheet: Spreadsheet):
-        """Add row for the new date. Insert formulas of sum in the row. """
+    def add_formulas_to_cells(self, date_cell):
+        """ Insert formulas of sum in columns (22, 23)."""
 
-        sheet.insert_row([self.date], index=2,
-                         value_input_option='USER_ENTERED')
-        date_cell = sheet.find('{}'.format(self.date))
-
-        # Insert sum formula in columns (22, 23)
         frml = f'=SUM(B{date_cell.row},D{date_cell.row},F{date_cell.row},H{date_cell.row},J{date_cell.row},L{date_cell.row},N{date_cell.row},P{date_cell.row},R{date_cell.row},T{date_cell.row})'
         frml2 = f'=SUM(C{date_cell.row},E{date_cell.row},G{date_cell.row},I{date_cell.row},K{date_cell.row},M{date_cell.row},O{date_cell.row},Q{date_cell.row},S{date_cell.row},U{date_cell.row})'
-        sheet.update_cell(date_cell.row, 22, frml)
-        sheet.update_cell(date_cell.row, 23, frml2)
-        return date_cell
+        return sh.update_cell(WS_MATR, date_cell.row, 22, frml), \
+               sh.update_cell(WS_MATR, date_cell.row, 23, frml)
 
 
 def proceed_order_dict() -> None:
