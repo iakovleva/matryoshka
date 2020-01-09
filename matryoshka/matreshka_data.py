@@ -1,5 +1,6 @@
 import logging
 import shelve
+import gspread
 from time import sleep
 from datetime import datetime, timedelta
 from collections import defaultdict
@@ -41,15 +42,16 @@ class MatryoshkaOrder:
     defaultdict(<class 'int'>, {'дэнбелг': 0, 'дэнворон': 7, 'дэнкол': 4})
     """
 
-    def __init__(self, date: str) -> None:
+    def __init__(self, date: str, leads_file: str) -> None:
         self.date = date
+        self.leads_file = leads_file
         self.order_dict = self.create_order_dict()
 
     def create_order_dict(self) -> DefaultDict[str, int]:
         """Retrieve data from csv and count number of orders for each day. """
 
         order_dict = defaultdict(int, **{k: 0 for k in SOURCES.keys()})
-        with open(LEADS_FILE) as f:
+        with open(self.leads_file) as f:
             for line in f:
                 order_id, status, source, order_date = line.split(',')
                 order_date = order_date.strip()
@@ -126,7 +128,7 @@ def proceed_order_dict() -> None:
         d = timedelta(days=i)
         date = (datetime.today() - d).strftime('%d/%m/%Y')
         try:
-            order_dict = MatryoshkaOrder(date)
+            order_dict = MatryoshkaOrder(date, LEADS_FILE)
             if order_dict.data_changed(MATR_DB) is True:
                 order_dict.write_row_to_matr_sheet()
                 date_cell = WS_MATR.find('{}'.format(date))
