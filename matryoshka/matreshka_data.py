@@ -6,8 +6,8 @@ from datetime import datetime, timedelta
 from collections import defaultdict
 from typing import DefaultDict
 
-from matryoshka.spiders import tokens
-from gspread_authorize import Spreadsheet
+from matryoshka.matryoshka.spiders import tokens
+from matroyshka.gspread_authorize import Spreadsheet
 from gspread.exceptions import CellNotFound
 
 
@@ -32,8 +32,8 @@ LOG_FILE = 'daily.log'
 
 # GSPREAD
 sh = Spreadsheet(tokens.SPREADSHEET_INCOME)
-WS_MATR = sh.open_worksheet('matr')
-WS_DAILY = sh.open_worksheet('daily')
+WS_MATR = 'matr'
+WS_DAILY = 'daily'
 
 
 class MatryoshkaOrder:
@@ -74,30 +74,21 @@ class MatryoshkaOrder:
                 logging.info("Data for %s is in db and hasn't changed.",
                              self.date)
 
-    def write_matr_in_daily_sheet(self, day_sum: str) -> None:
-        """ Write sum of matroyshka income to daily tab. """
-
-        try:
-            date_cell = WS_DAILY.find('{}'.format(self.date))
-            WS_DAILY.update_cell(date_cell.row, 7, day_sum)
-        except CellNotFound:
-            logging.info('There is no date %s in daily tab', self.date)
-
-    def write_row_to_matr_sheet(self) -> None:
+    def write_row_to_matr_sheet(self, sheet: Spreadsheet) -> None:
         """Write data from defaultdict into spreadsheet. """
 
         try:
-            date_cell = WS_MATR.find('{}'.format(self.date))
+            date_cell = sheet.find_in_worksheet(WS_MATR, '{}'.format(self.date))
         except CellNotFound:
-            sh.add_new_row_at_the_top([self.date], WS_MATR)
-            date_cell = WS_MATR.find('{}'.format(self.date))
+            sheet.add_new_row_at_the_top(WS_MATR, [self.date])
+            date_cell = sheet.find_in_worksheet(WS_MATR, '{}'.format(self.date))
             self.add_formulas_to_cells(date_cell)
 
         for source, quantity in self.order_dict.items():
             col, price = SOURCES[source]
             if quantity > 0:    # Don't write zeros
-                sh.update_cell(WS_MATR, date_cell.row, col+1, quantity)
-                sh.update_cell(WS_MATR, date_cell.row, col, quantity * price)
+                sheet.update_cell(WS_MATR, date_cell.row, col+1, quantity)
+                sheet.update_cell(WS_MATR, date_cell.row, col, quantity * price)
                 # To avoid gspread.exceptions.APIError: Quota exceeded
                 sleep(2)
 
@@ -111,6 +102,16 @@ class MatryoshkaOrder:
         frml2 = f'=SUM(C{date_cell.row},E{date_cell.row},G{date_cell.row},I{date_cell.row},K{date_cell.row},M{date_cell.row},O{date_cell.row},Q{date_cell.row},S{date_cell.row},U{date_cell.row})'
         return sh.update_cell(WS_MATR, date_cell.row, 22, frml), \
                sh.update_cell(WS_MATR, date_cell.row, 23, frml)
+
+    def write_matr_in_daily_sheet(self, sheet: Spreadsheet, day_sum: str) -> \
+                                                                        None:
+        """ Write sum of matroyshka income to daily tab. """
+
+        try:
+            date_cell = sheet.find_in_worksheet(WS_DAILY, '{}'.format(self.date))
+            sheet.update_cell(WS_DAILY, date_cell.row, 7, day_sum)
+        except CellNotFound:
+            logging.info('There is no date %s in daily tab', self.date)
 
 
 def proceed_order_dict() -> None:
@@ -130,10 +131,10 @@ def proceed_order_dict() -> None:
         try:
             order_dict = MatryoshkaOrder(date, LEADS_FILE)
             if order_dict.data_changed(MATR_DB) is True:
-                order_dict.write_row_to_matr_sheet()
-                date_cell = WS_MATR.find('{}'.format(date))
-                day_sum = WS_MATR.cell(date_cell.row, 22).value
-                order_dict.write_matr_in_daily_sheet(day_sum)
+                order_dict.write_row_to_matr_sheet(sh)
+                date_cell = sh.find_in_worksheet(WS_MATR, '{}'.format(date))
+                day_sum = sh.get_cell_value(WS_MATR, date_cell.row, 22)
+                order_dict.write_matr_in_daily_sheet(WS_DAILY, day_sum)
         except FileNotFoundError as e:
             logging.exception(e)
             raise
